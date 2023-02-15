@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cavaliergopher/grab/v3/pkg/grabtest"
+	"github.com/3JoB/grab/v3/pkg/grabtest"
 )
 
 // testRateLimiter is a naive rate limiter that limits throughput to r tokens

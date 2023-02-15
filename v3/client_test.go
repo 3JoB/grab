@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"hash"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -19,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cavaliergopher/grab/v3/pkg/grabtest"
+	"github.com/3JoB/grab/v3/pkg/grabtest"
 )
 
 // TestFilenameResolutions tests that the destination filename for Requests can
@@ -34,12 +33,12 @@ func TestFilenameResolution(t *testing.T) {
 		AttachmentFilename string
 		Expect             string
 	}{
-		{"Using Request.Filename", ".testWithFilename", "/url-filename", "header-filename", ".testWithFilename"},
-		{"Using Content-Disposition Header", "", "/url-filename", ".testWithHeaderFilename", ".testWithHeaderFilename"},
-		{"Using Content-Disposition Header with target directory", ".test", "/url-filename", "header-filename", ".test/header-filename"},
-		{"Using URL Path", "", "/.testWithURLFilename?params-filename", "", ".testWithURLFilename"},
-		{"Using URL Path with target directory", ".test", "/url-filename?garbage", "", ".test/url-filename"},
-		{"Failure", "", "", "", ""},
+		{Name: "Using Request.Filename", Filename: ".testWithFilename", URL: "/url-filename", AttachmentFilename: "header-filename", Expect: ".testWithFilename"},
+		{Name: "Using Content-Disposition Header", Filename: "", URL: "/url-filename", AttachmentFilename: ".testWithHeaderFilename", Expect: ".testWithHeaderFilename"},
+		{Name: "Using Content-Disposition Header with target directory", Filename: ".test", URL: "/url-filename", AttachmentFilename: "header-filename", Expect: ".test/header-filename"},
+		{Name: "Using URL Path", Filename: "", URL: "/.testWithURLFilename?params-filename", AttachmentFilename: "", Expect: ".testWithURLFilename"},
+		{Name: "Using URL Path with target directory", Filename: ".test", URL: "/url-filename?garbage", AttachmentFilename: "", Expect: ".test/url-filename"},
+		{Name: "Failure", Filename: "", URL: "", AttachmentFilename: "", Expect: ""},
 	}
 
 	err := os.Mkdir(".test", 0777)
@@ -85,30 +84,30 @@ func TestChecksums(t *testing.T) {
 		sum   string
 		match bool
 	}{
-		{128, md5.New(), "37eff01866ba3f538421b30b7cbefcac", true},
-		{128, md5.New(), "37eff01866ba3f538421b30b7cbefcad", false},
-		{1024, md5.New(), "b2ea9f7fcea831a4a63b213f41a8855b", true},
-		{1024, md5.New(), "b2ea9f7fcea831a4a63b213f41a8855c", false},
-		{1048576, md5.New(), "c35cc7d8d91728a0cb052831bc4ef372", true},
-		{1048576, md5.New(), "c35cc7d8d91728a0cb052831bc4ef373", false},
-		{128, sha1.New(), "e6434bc401f98603d7eda504790c98c67385d535", true},
-		{128, sha1.New(), "e6434bc401f98603d7eda504790c98c67385d536", false},
-		{1024, sha1.New(), "5b00669c480d5cffbdfa8bdba99561160f2d1b77", true},
-		{1024, sha1.New(), "5b00669c480d5cffbdfa8bdba99561160f2d1b78", false},
-		{1048576, sha1.New(), "ecfc8e86fdd83811f9cc9bf500993b63069923be", true},
-		{1048576, sha1.New(), "ecfc8e86fdd83811f9cc9bf500993b63069923bf", false},
-		{128, sha256.New(), "471fb943aa23c511f6f72f8d1652d9c880cfa392ad80503120547703e56a2be5", true},
-		{128, sha256.New(), "471fb943aa23c511f6f72f8d1652d9c880cfa392ad80503120547703e56a2be4", false},
-		{1024, sha256.New(), "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c9", true},
-		{1024, sha256.New(), "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c8", false},
-		{1048576, sha256.New(), "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83", true},
-		{1048576, sha256.New(), "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c82", false},
-		{128, sha512.New(), "1dffd5e3adb71d45d2245939665521ae001a317a03720a45732ba1900ca3b8351fc5c9b4ca513eba6f80bc7b1d1fdad4abd13491cb824d61b08d8c0e1561b3f7", true},
-		{128, sha512.New(), "1dffd5e3adb71d45d2245939665521ae001a317a03720a45732ba1900ca3b8351fc5c9b4ca513eba6f80bc7b1d1fdad4abd13491cb824d61b08d8c0e1561b3f8", false},
-		{1024, sha512.New(), "37f652be867f28ed033269cbba201af2112c2b3fd334a89fd2f757938ddee815787cc61d6e24a8a33340d0f7e86ffc058816b88530766ba6e231620a130b566c", true},
-		{1024, sha512.New(), "37f652bf867f28ed033269cbba201af2112c2b3fd334a89fd2f757938ddee815787cc61d6e24a8a33340d0f7e86ffc058816b88530766ba6e231620a130b566d", false},
-		{1048576, sha512.New(), "ac1d097b4ea6f6ad7ba640275b9ac290e4828cd760a0ebf76d555463a4f505f95df4f611629539a2dd1848e7c1304633baa1826462b3c87521c0c6e3469b67af", true},
-		{1048576, sha512.New(), "ac1d097c4ea6f6ad7ba640275b9ac290e4828cd760a0ebf76d555463a4f505f95df4f611629539a2dd1848e7c1304633baa1826462b3c87521c0c6e3469b67af", false},
+		{size: 128, hash: md5.New(), sum: "37eff01866ba3f538421b30b7cbefcac", match: true},
+		{size: 128, hash: md5.New(), sum: "37eff01866ba3f538421b30b7cbefcad", match: false},
+		{size: 1024, hash: md5.New(), sum: "b2ea9f7fcea831a4a63b213f41a8855b", match: true},
+		{size: 1024, hash: md5.New(), sum: "b2ea9f7fcea831a4a63b213f41a8855c", match: false},
+		{size: 1048576, hash: md5.New(), sum: "c35cc7d8d91728a0cb052831bc4ef372", match: true},
+		{size: 1048576, hash: md5.New(), sum: "c35cc7d8d91728a0cb052831bc4ef373", match: false},
+		{size: 128, hash: sha1.New(), sum: "e6434bc401f98603d7eda504790c98c67385d535", match: true},
+		{size: 128, hash: sha1.New(), sum: "e6434bc401f98603d7eda504790c98c67385d536", match: false},
+		{size: 1024, hash: sha1.New(), sum: "5b00669c480d5cffbdfa8bdba99561160f2d1b77", match: true},
+		{size: 1024, hash: sha1.New(), sum: "5b00669c480d5cffbdfa8bdba99561160f2d1b78", match: false},
+		{size: 1048576, hash: sha1.New(), sum: "ecfc8e86fdd83811f9cc9bf500993b63069923be", match: true},
+		{size: 1048576, hash: sha1.New(), sum: "ecfc8e86fdd83811f9cc9bf500993b63069923bf", match: false},
+		{size: 128, hash: sha256.New(), sum: "471fb943aa23c511f6f72f8d1652d9c880cfa392ad80503120547703e56a2be5", match: true},
+		{size: 128, hash: sha256.New(), sum: "471fb943aa23c511f6f72f8d1652d9c880cfa392ad80503120547703e56a2be4", match: false},
+		{size: 1024, hash: sha256.New(), sum: "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c9", match: true},
+		{size: 1024, hash: sha256.New(), sum: "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c8", match: false},
+		{size: 1048576, hash: sha256.New(), sum: "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83", match: true},
+		{size: 1048576, hash: sha256.New(), sum: "fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c82", match: false},
+		{size: 128, hash: sha512.New(), sum: "1dffd5e3adb71d45d2245939665521ae001a317a03720a45732ba1900ca3b8351fc5c9b4ca513eba6f80bc7b1d1fdad4abd13491cb824d61b08d8c0e1561b3f7", match: true},
+		{size: 128, hash: sha512.New(), sum: "1dffd5e3adb71d45d2245939665521ae001a317a03720a45732ba1900ca3b8351fc5c9b4ca513eba6f80bc7b1d1fdad4abd13491cb824d61b08d8c0e1561b3f8", match: false},
+		{size: 1024, hash: sha512.New(), sum: "37f652be867f28ed033269cbba201af2112c2b3fd334a89fd2f757938ddee815787cc61d6e24a8a33340d0f7e86ffc058816b88530766ba6e231620a130b566c", match: true},
+		{size: 1024, hash: sha512.New(), sum: "37f652bf867f28ed033269cbba201af2112c2b3fd334a89fd2f757938ddee815787cc61d6e24a8a33340d0f7e86ffc058816b88530766ba6e231620a130b566d", match: false},
+		{size: 1048576, hash: sha512.New(), sum: "ac1d097b4ea6f6ad7ba640275b9ac290e4828cd760a0ebf76d555463a4f505f95df4f611629539a2dd1848e7c1304633baa1826462b3c87521c0c6e3469b67af", match: true},
+		{size: 1048576, hash: sha512.New(), sum: "ac1d097c4ea6f6ad7ba640275b9ac290e4828cd760a0ebf76d555463a4f505f95df4f611629539a2dd1848e7c1304633baa1826462b3c87521c0c6e3469b67af", match: false},
 	}
 
 	for _, test := range tests {
@@ -159,10 +158,10 @@ func TestContentLength(t *testing.T) {
 		Expect int64
 		Match  bool
 	}{
-		{"Good size in HEAD request", false, size, size, true},
-		{"Good size in GET request", true, size, size, true},
-		{"Bad size in HEAD request", false, size - 1, size, false},
-		{"Bad size in GET request", true, size - 1, size, false},
+		{Name: "Good size in HEAD request", NoHead: false, Size: size, Expect: size, Match: true},
+		{Name: "Good size in GET request", NoHead: true, Size: size, Expect: size, Match: true},
+		{Name: "Bad size in HEAD request", NoHead: false, Size: size - 1, Expect: size, Match: false},
+		{Name: "Bad size in GET request", NoHead: true, Size: size - 1, Expect: size, Match: false},
 	}
 
 	for _, test := range testCases {
@@ -205,7 +204,7 @@ func TestContentLength(t *testing.T) {
 func TestAutoResume(t *testing.T) {
 	segs := 8
 	size := 1048576
-	sum := grabtest.DefaultHandlerSHA256ChecksumBytes //grab/v3test.MustHexDecodeString("fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83")
+	sum := grabtest.DefaultHandlerSHA256ChecksumBytes // grab/v3test.MustHexDecodeString("fbbab289f7f94b25736c58be46a994c441fd02552cc6022352e3d86d2fab7c83")
 	filename := ".testAutoResume"
 
 	defer os.Remove(filename)
@@ -293,7 +292,7 @@ func TestAutoResume(t *testing.T) {
 	})
 
 	t.Run("WithNoContentLengthHeaderAndChecksumFailure", func(t *testing.T) {
-		// ref: https://github.com/cavaliergopher/grab/v3/pull/27
+		// ref: https://github.com/3JoB/grab/v3/pull/27
 		size := size * 2
 		grabtest.WithTestServer(t, func(url string) {
 			req := mustNewRequest(filename, url)
@@ -625,7 +624,7 @@ func TestBeforeCopyHook(t *testing.T) {
 	// Assert that an existing local file will not be truncated prior to the
 	// BeforeCopy hook has a chance to cancel the request
 	t.Run("NoTruncate", func(t *testing.T) {
-		tfile, err := ioutil.TempFile("", "grab_client_test.*.file")
+		tfile, err := os.CreateTemp("", "grab_client_test.*.file")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -722,7 +721,7 @@ func TestAfterCopyHook(t *testing.T) {
 }
 
 func TestIssue37(t *testing.T) {
-	// ref: https://github.com/cavaliergopher/grab/v3/issues/37
+	// ref: https://github.com/3JoB/grab/v3/issues/37
 	filename := "./.testIssue37"
 	largeSize := int64(2097152)
 	smallSize := int64(1048576)
@@ -763,7 +762,7 @@ func TestIssue37(t *testing.T) {
 // TestHeadBadStatus validates that HEAD requests that return non-200 can be
 // ignored and succeed if the GET requests succeeeds.
 //
-// Fixes: https://github.com/cavaliergopher/grab/v3/issues/43
+// Fixes: https://github.com/3JoB/grab/v3/issues/43
 func TestHeadBadStatus(t *testing.T) {
 	expect := http.StatusOK
 	filename := ".testIssue43"
@@ -795,7 +794,7 @@ func TestHeadBadStatus(t *testing.T) {
 // TestAutoResume also covers cases with checksum validation.
 //
 // Kudos to Setnička Jiří <Jiri.Setnicka@ysoft.com> for identifying and raising
-// a solution to this issue. Ref: https://github.com/cavaliergopher/grab/v3/pull/27
+// a solution to this issue. Ref: https://github.com/3JoB/grab/v3/pull/27
 func TestMissingContentLength(t *testing.T) {
 	// expectSize must be sufficiently large that DefaultClient.Do won't prefetch
 	// the entire body and compute ContentLength before returning a Response.

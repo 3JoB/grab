@@ -1,7 +1,7 @@
 package grab
 
 import (
-	"fmt"
+	"errors"
 	"os"
 )
 
@@ -47,7 +47,7 @@ func GetBatch(workers int, dst string, urlStrs ...string) (<-chan *Response, err
 		return nil, err
 	}
 	if !fi.IsDir() {
-		return nil, fmt.Errorf("destination is not a directory")
+		return nil, errors.New("destination is not a directory")
 	}
 
 	reqs := make([]*Request, len(urlStrs))

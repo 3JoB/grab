@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cavaliergopher/grab/v3"
+	"github.com/3JoB/grab/v3"
 )
 
 type ConsoleClient struct {
@@ -155,7 +155,7 @@ func byteString(n int64) string {
 }
 
 func etaString(eta time.Time) string {
-	d := eta.Sub(time.Now())
+	d := time.Until(eta)
 	if d < time.Second {
 		return "<1s"
 	}

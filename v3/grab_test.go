@@ -2,12 +2,11 @@ package grab
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"testing"
 
-	"github.com/cavaliergopher/grab/v3/pkg/grabtest"
+	"github.com/3JoB/grab/v3/pkg/grabtest"
 )
 
 func TestMain(m *testing.M) {
@@ -17,7 +16,7 @@ func TestMain(m *testing.M) {
 		if err != nil {
 			panic(err)
 		}
-		tmpDir, err := ioutil.TempDir("", "grab-")
+		tmpDir, err := os.MkdirTemp("", "grab-")
 		if err != nil {
 			panic(err)
 		}

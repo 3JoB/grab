@@ -2,7 +2,7 @@ package grabtest
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -23,10 +23,10 @@ func TestHandlerMethodWhitelist(t *testing.T) {
 		Method           string
 		ExpectStatusCode int
 	}{
-		{[]string{"GET", "HEAD"}, "GET", http.StatusOK},
-		{[]string{"GET", "HEAD"}, "HEAD", http.StatusOK},
-		{[]string{"GET"}, "HEAD", http.StatusMethodNotAllowed},
-		{[]string{"HEAD"}, "GET", http.StatusMethodNotAllowed},
+		{Whitelist: []string{"GET", "HEAD"}, Method: "GET", ExpectStatusCode: http.StatusOK},
+		{Whitelist: []string{"GET", "HEAD"}, Method: "HEAD", ExpectStatusCode: http.StatusOK},
+		{Whitelist: []string{"GET"}, Method: "HEAD", ExpectStatusCode: http.StatusMethodNotAllowed},
+		{Whitelist: []string{"HEAD"}, Method: "GET", ExpectStatusCode: http.StatusMethodNotAllowed},
 	}
 
 	for _, test := range tests {
@@ -71,10 +71,10 @@ func TestHandlerContentLength(t *testing.T) {
 		ExpectHeaderLen int64
 		ExpectBodyLen   int
 	}{
-		{"GET", 321, 321, 321},
-		{"HEAD", 321, 321, 0},
-		{"GET", 0, 0, 0},
-		{"HEAD", 0, 0, 0},
+		{Method: "GET", ContentLength: 321, ExpectHeaderLen: 321, ExpectBodyLen: 321},
+		{Method: "HEAD", ContentLength: 321, ExpectHeaderLen: 321, ExpectBodyLen: 0},
+		{Method: "GET", ContentLength: 0, ExpectHeaderLen: 0, ExpectBodyLen: 0},
+		{Method: "HEAD", ContentLength: 0, ExpectHeaderLen: 0, ExpectBodyLen: 0},
 	}
 
 	for _, test := range tests {
@@ -84,7 +84,7 @@ func TestHandlerContentLength(t *testing.T) {
 
 			AssertHTTPResponseHeader(t, resp, "Content-Length", "%d", test.ExpectHeaderLen)
 
-			b, err := ioutil.ReadAll(resp.Body)
+			b, err := io.ReadAll(resp.Body)
 			if err != nil {
 				panic(err)
 			}
